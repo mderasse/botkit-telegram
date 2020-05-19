@@ -13,12 +13,22 @@ const newMessageHandler = (message, controller) => {
 	controller.ingest(bot, {}, source);
 };
 
+const getUser = async (client) => {
+	return await client.getMe();
+};
+
 const TelegramBot = (configuration) => {
 	const client = new Telegram(configuration.token, { polling: true });
 	configuration.client = client;
 
 	const telegramBotkit = Botkit.core(configuration || {});
 	telegramBotkit.defineBot(botDefinition);
+
+	const user = getUser(client);
+
+	telegramBotkit.config.client.user = user
+	telegramBotkit.trigger('ready', [telegramBotkit, user])
+	telegramBotkit.log('Logged in as %s - %s\n', user.username, user.id);
 
 	// Attach Handlers and Middlewares
 	telegramBotkit.handleMessageRecieve = newMessageHandler;
@@ -48,14 +58,8 @@ const TelegramBot = (configuration) => {
 	// Stay Alive Please
 	telegramBotkit.startTicking();
 
-
-	client.getMe().then(user => {
-		telegramBotkit.config.client.user = user
-		telegramBotkit.trigger('ready', [telegramBotkit, user])
-		telegramBotkit.log('Logged in as %s - %s\n', user.username, user.id);
-	})
-
 	return telegramBotkit
 };
+
 
 module.exports = TelegramBot;
